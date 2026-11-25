@@ -1,0 +1,68 @@
+// Starter spec, read from the code and traces by portal (no AI).
+// It says what exists. Add what the code can't: domains, your names,
+// rules, and what you plan to build.
+// Conventions: https://portal.haris-d21.workers.dev/skills/portal-architecture/SKILL.md
+model {
+  system = domain 'clickstack-demo-subscription-app' {
+    clickstack = service 'clickstack' {  // docker-compose.yml:2
+      metadata {
+        otel_service 'clickstack'
+        resource 'clickstack'
+      }
+    }
+    postgres_db = datastore 'postgres-db' {  // docker-compose.yml:20
+      metadata {
+        resource 'postgres-db'
+      }
+    }
+    subscription_app = service 'subscription-app' {  // docker-compose.yml:36
+      metadata {
+        otel_service 'subscription-backend'
+        resource 'subscription-app'
+      }
+    }
+    docs_loader = service 'docs-loader' {  // docker-compose.yml:91
+      metadata {
+        otel_service 'docs-loader'
+        resource 'docs-loader'
+      }
+    }
+    load_generator = service 'load-generator' {  // docker-compose.yml:119
+      metadata {
+        otel_service 'load-generator'
+        resource 'load-generator'
+      }
+    }
+    socat = service 'socat' {  // docker-compose.yml:135
+      metadata {
+        otel_service 'socat'
+        resource 'socat'
+      }
+    }
+    otel_collector = service 'otel-collector' {  // docker-compose.yml:151
+      metadata {
+        otel_service 'otel-collector'
+        resource 'otel-collector'
+      }
+    }
+  }
+
+  subscription_app -> postgres_db  // reads or writes? say which: -[reads]-> or -[writes]->
+  subscription_app -[request]-> clickstack  // env.OTEL_EXPORTER_OTLP_ENDPOINT
+  subscription_app -[request]-> docs_loader  // env.DOCS_LOADER_HOST
+  docs_loader -[request]-> clickstack  // env.OTEL_EXPORTER_OTLP_ENDPOINT
+  load_generator -[request]-> subscription_app  // env.LOCUST_HOST
+}
+
+specification {
+  element domain
+  element service
+  element event
+  element datastore
+  element infra
+  relationship request
+  relationship publishes
+  relationship consumes
+  relationship reads
+  relationship writes
+}
